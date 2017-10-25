@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+        <title>Google Maps and Places</title>
+        <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+        <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+        <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script> 
+        <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
+        <script src="key.js"></script>
+        <link rel="stylesheet" href="demos.css"/>
+        <style>
+            #footer
+            {
+                text-align: center;
+            }
+        </style>
+
+        <script>
+        var xmlhttp;    
+        var lat; 
+        var long;
+            
+      /*  window.onload=function()
+        {
+            //document.addEventListener('deviceready', init);
+            init();
+        }
+        */
+        function initMap()
+        {
+            //var options =  { maximumAge: 10000, timeout: 10000, enableHighAccuracy: true };
+            //navigator.geolocation.getCurrentPosition(success, error,{enableHighAccuracy:true});
+            navigator.geolocation.getCurrentPosition(success, error, { timeout: 30000, enableHighAccuracy: true });
+
+        }
+            
+        function success(position)
+        {
+            lat = position.coords.latitude;
+            long = position.coords.longitude;
+//            alert('lat:'+lat+' long: '+long);        
+            document.getElementById('lat').innerHTML = lat;
+            document.getElementById('long').innerHTML = long;
+            //getAreaInfo();
+        }
+            
+        function getAreaInfo()
+        {
+            //https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670,151.1957&radius=500&types=food&key=YOUR_API_KEY
+            
+            var url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=";
+            url += lat + ",";
+            url += long;
+            url += "&rankby=distance&types=hospital&key=" + key;
+            xmlhttp = new XMLHttpRequest();
+            xmlhttp.onreadystatechange = processPlace;
+            xmlhttp.open("GET", url, true);
+            xmlhttp.send();            
+        }
+            
+        function processPlace()
+        {
+            console.log('Inside processPlace');
+            var myLatLng = {lat: lat, lng: long};
+            
+            // Create a map object and specify the DOM element for display.
+            var map = new google.maps.Map(document.getElementById('map'), {
+              center: myLatLng,
+              zoom: 15
+            });
+             // Create a marker and set its position.
+        var marker = new google.maps.Marker({
+          map: map,
+          position: myLatLng,
+          title: 'Current Location'
+        });
+      
+            //console.log('Map is '+map);
+            
+            var out="";
+            if(xmlhttp.readyState==4){
+                console.log('Inside readyState 4');
+                var theJSON = xmlhttp.responseText;
+                
+                var result = JSON.parse(theJSON);
+                var resultArray = result.results;
+                var markers= [];
+                for(var x = 0; x < resultArray.length; x++)
+                {
+                    var thislocation = resultArray[x].name;
+                    var label = (x+1).toString();
+                    console.log('Loop = '+x);
+                    out+="<ul data-role="+"listview"+"<li>";
+                    out += "<h4> " +(x+1)+"."+resultArray[x].name + "</h4>";
+                    out +="<p>"+resultArray[x].vicinity+"</p>"+"</li></ul>"
+
+                    var thislat = resultArray[x].geometry.location.lat;
+                    var thislong = resultArray[x].geometry.location.lng;
+                    var thislatlong = {lat: thislat, lng: thislong};
+                    console.log(thislatlong);
+
+                    // Create a marker and set its position.
+                     
+                     markers[x] = new google.maps.Marker({
+                      map: map,
+                      position: thislatlong,
+                      title: thislocation,
+                      label: label
+                    });
+                    console.log('End of loop'+x)
+                }
+                console.log('At the end of processPlace');
+                console.log(out);
+                document.getElementById('result').innerHTML = out;
+            }
+        }
+            
+        function error(e)
+        {
+            alert(e.message);
+        }
+        </script>
+    </head>
+    <body>
+        <div data-role="page" id="page">
+        <div data-role="header">
+            <h1>Maps and Places </h1>
+        </div>
+        <div data-role="main" id="main" class="ui-content">
+            <p>Latitude: <ouput id="lat"></ouput></p>
+            <p>Longitude: <output id="long"></output></p>
+            <div id="map"></div>
+            <div id="result"></div>
+        </div>
+        <div data-role="footer" id="footer" style="align-items: center">
+            <small>Copyright Sridhar Inc 2017. All Rights Protected</small>
+        </div>
+        </div>    
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJmZRdGN1c7k9cdTkSZy4kLXaWlWrAJx0&callback=initMap"
+        async defer></script>
+        <script type="text/javascript" src="cordova.js"></script>
+    </body>
+</html>
